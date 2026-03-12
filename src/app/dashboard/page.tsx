@@ -5,6 +5,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import StatsCards from "@/components/dashboard/StatsCards";
 import ActivityTimeline from "@/components/dashboard/ActivityTimeline";
 import AutomationToggle from "@/components/dashboard/AutomationToggle";
+import TokenUsageCard from "@/components/dashboard/TokenUsageCard";
 import { useStats } from "@/hooks/useStats";
 import { useSettings } from "@/hooks/useSettings";
 
@@ -26,6 +27,8 @@ export default function DashboardPage() {
           enabled={settings?.automationEnabled ?? false}
           onToggle={() => mutateSettings()}
         />
+
+        <TokenUsageCard />
 
         <ActivityTimeline activities={recentActivity} />
       </div>

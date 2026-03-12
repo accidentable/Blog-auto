@@ -24,6 +24,7 @@ model NewsItem {
   updatedAt       DateTime @updatedAt
 
   activityLogs ActivityLog[]
+  tokenUsages  TokenUsage[]
 }
 
 model ActivityLog {
@@ -32,6 +33,20 @@ model ActivityLog {
   message   String
   newsId    String?
   createdAt DateTime @default(now())
+
+  news NewsItem? @relation(fields: [newsId], references: [id])
+}
+
+model TokenUsage {
+  id             String   @id @default(cuid())
+  provider       String
+  model          String
+  inputTokens    Int
+  outputTokens   Int
+  totalTokens    Int
+  estimatedCost  Float    @default(0)
+  newsId         String?
+  createdAt      DateTime @default(now())
 
   news NewsItem? @relation(fields: [newsId], references: [id])
 }

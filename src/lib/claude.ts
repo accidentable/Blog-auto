@@ -4,6 +4,23 @@ import type { AIProvider } from "@/types";
 interface AnalysisResult {
   summary: string;
   threadsContent: string;
+  usage: {
+    provider: string;
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    estimatedCost: number;
+  };
+}
+
+// gpt-4o-mini pricing: $0.15/1M input, $0.60/1M output
+// claude-sonnet: $3/1M input, $15/1M output
+function estimateCost(provider: string, inputTokens: number, outputTokens: number): number {
+  if (provider === "openai") {
+    return (inputTokens * 0.15 + outputTokens * 0.60) / 1_000_000;
+  }
+  return (inputTokens * 3 + outputTokens * 15) / 1_000_000;
 }
 
 const ANALYSIS_PROMPT = (content: string) => `너는 블록체인 업계에서 10년 넘게 일한 현직자야. 텔레그램 뉴스를 받아서 Threads에 올릴 글을 써야 해.
@@ -83,14 +100,13 @@ ${content}
 다음 JSON 형식으로만 응답 (threadsContent 안의 줄바꿈은 \\n으로):
 {"summary": "요약", "threadsContent": "내용"}`;
 
-function parseResult(text: string): AnalysisResult {
+function parseResult(text: string) {
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      return JSON.parse(jsonMatch[0]) as { summary: string; threadsContent: string };
     }
   } catch {}
-
   return {
     summary: text.slice(0, 500),
     threadsContent: text.slice(0, 500),
@@ -102,23 +118,40 @@ async function analyzeWithClaude(
   apiKey: string
 ): Promise<AnalysisResult> {
   const client = new Anthropic({ apiKey });
+  const model = "claude-sonnet-4-20250514";
 
   const message = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model,
     max_tokens: 1024,
     messages: [{ role: "user", content: ANALYSIS_PROMPT(content) }],
   });
 
   const text =
     message.content[0].type === "text" ? message.content[0].text : "";
-  return parseResult(text);
+  const parsed = parseResult(text);
+
+  const inputTokens = message.usage.input_tokens;
+  const outputTokens = message.usage.output_tokens;
+
+  return {
+    ...parsed,
+    usage: {
+      provider: "claude",
+      model,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      estimatedCost: estimateCost("claude", inputTokens, outputTokens),
+    },
+  };
 }
 
 async function analyzeWithOpenAI(
   content: string,
   apiKey: string
 ): Promise<AnalysisResult> {
-  // Use OpenAI Responses API with web search
+  const model = "gpt-4o-mini";
+
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -126,7 +159,7 @@ async function analyzeWithOpenAI(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model,
       tools: [{ type: "web_search_preview" }],
       input: ANALYSIS_PROMPT(content),
     }),
@@ -139,7 +172,6 @@ async function analyzeWithOpenAI(
 
   const data = await res.json();
 
-  // Extract text from Responses API output
   let text = "";
   for (const item of data.output || []) {
     if (item.type === "message" && item.content) {
@@ -151,7 +183,21 @@ async function analyzeWithOpenAI(
     }
   }
 
-  return parseResult(text);
+  const parsed = parseResult(text);
+  const inputTokens = data.usage?.input_tokens || 0;
+  const outputTokens = data.usage?.output_tokens || 0;
+
+  return {
+    ...parsed,
+    usage: {
+      provider: "openai",
+      model,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      estimatedCost: estimateCost("openai", inputTokens, outputTokens),
+    },
+  };
 }
 
 export async function analyzeNews(

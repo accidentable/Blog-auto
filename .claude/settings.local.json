@@ -12,7 +12,8 @@
       "Bash(rm:*)",
       "Bash(curl:*)",
       "Bash(where ngrok:*)",
-      "Bash(nslookup:*)"
+      "Bash(nslookup:*)",
+      "Bash(gh auth:*)"
     ]
   }
 }

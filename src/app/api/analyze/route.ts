@@ -56,22 +56,34 @@ export async function POST(request: NextRequest) {
 
     const result = await analyzeNews(newsItem.originalContent, apiKey, provider);
 
-    const updated = await prisma.newsItem.update({
-      where: { id: newsId },
-      data: {
-        status: "analyzed",
-        aiSummary: result.summary,
-        threadsContent: result.threadsContent,
-      },
-    });
-
-    await prisma.activityLog.create({
-      data: {
-        type: "analysis_complete",
-        message: `AI 분석 완료 (${provider === "openai" ? "OpenAI" : "Claude"})`,
-        newsId,
-      },
-    });
+    const [updated] = await Promise.all([
+      prisma.newsItem.update({
+        where: { id: newsId },
+        data: {
+          status: "analyzed",
+          aiSummary: result.summary,
+          threadsContent: result.threadsContent,
+        },
+      }),
+      prisma.tokenUsage.create({
+        data: {
+          provider: result.usage.provider,
+          model: result.usage.model,
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+          totalTokens: result.usage.totalTokens,
+          estimatedCost: result.usage.estimatedCost,
+          newsId,
+        },
+      }),
+      prisma.activityLog.create({
+        data: {
+          type: "analysis_complete",
+          message: `AI 분석 완료 (${provider === "openai" ? "OpenAI" : "Claude"}) - ${result.usage.totalTokens} 토큰`,
+          newsId,
+        },
+      }),
+    ]);
 
     return NextResponse.json(updated);
   } catch (error) {

@@ -38,6 +38,26 @@ export interface Settings {
   automationEnabled: boolean;
 }
 
+export interface TokenUsage {
+  id: string;
+  provider: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCost: number;
+  newsId: string | null;
+  createdAt: string;
+}
+
+export interface TokenStats {
+  totalTokens: number;
+  totalCost: number;
+  todayTokens: number;
+  todayCost: number;
+  recentUsage: TokenUsage[];
+}
+
 export interface DashboardStats {
   totalNews: number;
   analyzedToday: number;
