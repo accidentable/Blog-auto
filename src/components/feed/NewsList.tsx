@@ -8,9 +8,10 @@ import type { NewsItem } from "@/types";
 interface NewsListProps {
   news: NewsItem[];
   isLoading: boolean;
+  onDelete?: (id: string) => void;
 }
 
-export default function NewsList({ news, isLoading }: NewsListProps) {
+export default function NewsList({ news, isLoading, onDelete }: NewsListProps) {
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -34,7 +35,7 @@ export default function NewsList({ news, isLoading }: NewsListProps) {
   return (
     <div className="space-y-3">
       {news.map((item) => (
-        <NewsCard key={item.id} news={item} />
+        <NewsCard key={item.id} news={item} onDelete={onDelete} />
       ))}
     </div>
   );

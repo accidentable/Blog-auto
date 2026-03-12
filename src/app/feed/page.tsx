@@ -17,7 +17,11 @@ const filters = [
 
 export default function FeedPage() {
   const [activeFilter, setActiveFilter] = useState("");
-  const { news, isLoading } = useNewsList(activeFilter || undefined);
+  const { news, isLoading, mutate } = useNewsList(activeFilter || undefined);
+
+  const handleDelete = (id: string) => {
+    mutate(news.filter((n) => n.id !== id), false);
+  };
 
   return (
     <MobileContainer>
@@ -43,7 +47,7 @@ export default function FeedPage() {
         ))}
       </div>
 
-      <NewsList news={news} isLoading={isLoading} />
+      <NewsList news={news} isLoading={isLoading} onDelete={handleDelete} />
     </MobileContainer>
   );
 }

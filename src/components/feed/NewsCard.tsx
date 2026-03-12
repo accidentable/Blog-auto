@@ -1,13 +1,37 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import StatusBadge from "./StatusBadge";
 import { formatDate, truncate } from "@/lib/utils";
-import { MessageSquare, ArrowRight } from "lucide-react";
+import { MessageSquare, ArrowRight, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { NewsItem, NewsStatus } from "@/types";
 
-export default function NewsCard({ news }: { news: NewsItem }) {
+interface NewsCardProps {
+  news: NewsItem;
+  onDelete?: (id: string) => void;
+}
+
+export default function NewsCard({ news, onDelete }: NewsCardProps) {
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm("이 뉴스를 삭제하시겠습니까?")) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/news/${news.id}`, { method: "DELETE" });
+      if (res.ok) onDelete?.(news.id);
+    } catch {
+      alert("삭제에 실패했습니다.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <Link href={`/post/${news.id}`} className="block p-4">
@@ -36,7 +60,16 @@ export default function NewsCard({ news }: { news: NewsItem }) {
               {formatDate(news.createdAt)}
             </p>
           </div>
-          <ArrowRight className="h-4 w-4 text-gray-400 shrink-0 mt-1" />
+          <div className="flex items-center gap-2 shrink-0 mt-1">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+            <ArrowRight className="h-4 w-4 text-gray-400" />
+          </div>
         </div>
       </Link>
     </Card>
