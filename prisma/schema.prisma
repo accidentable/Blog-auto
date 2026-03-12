@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model NewsItem {
+  id              String   @id @default(cuid())
+  telegramMsgId   Int?
+  channelId       String?
+  channelTitle    String?
+  originalContent String
+  mediaUrls       String   @default("[]")
+  status          String   @default("new")
+  aiSummary       String?
+  threadsContent  String?
+  threadsPostId   String?
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  activityLogs ActivityLog[]
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  newsId    String?
+  createdAt DateTime @default(now())
+
+  news NewsItem? @relation(fields: [newsId], references: [id])
+}
+
+model Settings {
+  id                 String  @id @default("singleton")
+  telegramBotToken   String?
+  channelIds         String  @default("[]")
+  aiProvider         String  @default("openai")
+  claudeApiKey       String?
+  openaiApiKey       String?
+  threadsAccessToken String?
+  threadsUserId      String?
+  automationEnabled  Boolean @default(false)
+}
