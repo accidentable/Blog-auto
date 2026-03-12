@@ -3,8 +3,6 @@
 텔레그램 채널/그룹의 뉴스를 AI로 분석하고, Threads에 최적화된 콘텐츠를 자동 생성하는 시스템.
 프롬프트를 수정하면 어떤 분야든 원하는 페르소나와 톤으로 커스터마이징 가능.
 
-> **Live Demo:** [blog-auto-wheat.vercel.app](https://blog-auto-wheat.vercel.app)
-
 ## Features
 
 - **Telegram 웹훅 연동** - 채널/그룹 메시지 실시간 수신
